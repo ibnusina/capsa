@@ -149,8 +149,22 @@ def isValid5Card(prevTurn: List[Card], currentTurn: List[Card]):
         return False
 
 
+def isValidFirstTurn(turn: List[Card], enableTriple: bool=False) -> bool:
+    if len(turn) == 1:
+        return turn[0] == Card(3, Suit.D)
+    elif len(turn) == 2:
+        return Card(3, Suit.D) in turn and turn[0].score == 3 and turn[1].score == 3
+    elif len(turn) == 3 and enableTriple:
+        return Card(3, Suit.D) in turn and turn[0].score == 3 and turn[1].score == 3 and turn[2].score == 3
+    elif len(turn) == 5:
+        rank, _ = clasify5Card(turn)
+        return Card(3, Suit.D) in turn and rank is not None
+
+
 def isValidTurn(prevTurn: List[Card], currentTurn: List[Card], enableTriple: bool=False) -> bool:
-    if len(prevTurn) == 1 and len(currentTurn) == 1:
+    if (prevTurn is None or len(prevTurn) == 0) and len(currentTurn) > 0:
+        return isValidFirstTurn(currentTurn, enableTriple)
+    elif len(prevTurn) == 1 and len(currentTurn) == 1:
         return isValid1Card(prevTurn[0], currentTurn[0])
     elif len(prevTurn) == 2 and len(currentTurn) == 2:
         return isValid2Card(prevTurn, currentTurn)
@@ -169,9 +183,14 @@ turn1 = [Card(1, Suit.D), Card(3, Suit.D), Card(4, Suit.S), Card(5, Suit.H), Car
 turn2 = [Card(1, Suit.D), Card(1, Suit.H), Card(1, Suit.S), Card(5, Suit.H), Card(5, Suit.D)]
 turn3 = [Card(1, Suit.D), Card(5, Suit.H), Card(5, Suit.S), Card(5, Suit.D), Card(5, Suit.C)]
 turn4 = [Card(2, Suit.D)]
+turn5 = [Card(3, Suit.D)]
 
 
 print(isValidTurn(turn1, turn2))
 print(isValidTurn(turn3, turn2))
 print(isValidTurn(turn4, turn3))
+print(isValidTurn(None, turn4))
+print(isValidTurn(None, turn5))
+print(isValidTurn(None, turn1))
+print(isValidTurn(None, turn2))
 
