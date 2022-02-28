@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List, Tuple
 from functools import reduce
+from collections import Counter
+
 
 class Rank(Enum):
     STRAIGHT = 1
@@ -96,6 +98,24 @@ def isStraightAndRoyal(turn: List[Card]) -> Tuple:
     
     return False, False, None
 
+
+def isFullHouseOrFourAKind(turn: List[Card]) -> Tuple:
+    values = list(map(lambda x: x.value, turn))
+    valuesSet = list(Counter(values).keys())
+    valuesCount = list(Counter(values).values())
+    maxCount = max(valuesCount)
+    hightValue = valuesSet[valuesCount.index(maxCount)]
+    hightCards = filter(lambda x: x.value == hightValue, turn)
+
+    if len(valuesSet) == 2:
+        if maxCount == 3:
+            return Rank.FULL_HOUSE, max(hightCards)
+        elif maxCount == 4:        
+            return Rank.FOUR_A_KIND, max(hightCards)
+    
+    return None
+
+
 def clasify5Card(turn: List[Card]) -> Tuple:
     straight, royal, highest = isStraightAndRoyal(turn)
     flush = isFlush(turn)
@@ -110,24 +130,48 @@ def clasify5Card(turn: List[Card]) -> Tuple:
         return Rank.STRAIGHT, highest
     elif flush:
         return Rank.FLUSH, max(turn)
-        
-    return None
+    else:
+        return isFullHouseOrFourAKind(turn)
 
 
-def isValidTurn(prevTurn: List[Card], currentTurn: List[Card]) -> bool:
-    if len(prevTurn) != len(currentTurn):
+def isValid5Card(prevTurn: List[Card], currentTurn: List[Card]):
+    prevRank, prevCard = clasify5Card(prevTurn)
+    currentRank, currentCard = clasify5Card(currentTurn)
+
+    if prevRank and prevCard and currentRank and currentCard:
+        if currentRank.value > prevRank.value:
+            return True
+        elif currentRank.value == prevRank.value:
+            return currentCard > prevCard
+        else:
+            return False
+    else:
         return False
 
+
+def isValidTurn(prevTurn: List[Card], currentTurn: List[Card], enableTriple: bool=False) -> bool:
     if len(prevTurn) == 1 and len(currentTurn) == 1:
         return isValid1Card(prevTurn[0], currentTurn[0])
-
-    if len(prevTurn) == 2 and len(currentTurn) == 2:
+    elif len(prevTurn) == 2 and len(currentTurn) == 2:
         return isValid2Card(prevTurn, currentTurn)
+    elif len(prevTurn) == 3 and len(currentTurn) == 3 and enableTriple:
+        return isValid3Card(prevTurn, currentTurn)
+    elif len(prevTurn) == 5 and len(currentTurn) == 5:
+        return isValid5Card(prevTurn, currentTurn)
+    elif len(prevTurn) == 1 and prevTurn[0].score == 2 and len(currentTurn) == 5:
+        rank, _ = clasify5Card(currentTurn)
+        return rank in [Rank.FOUR_A_KIND, Rank.STRAIGHT_FLUSH, Rank.ROYAL_STRAIGHT_FLUSH]
 
-    if len(prevTurn) == 3 and len(currentTurn) == 3:
-        return isValid2Card(prevTurn, currentTurn)
-    
     return False
 
-print(clasify5Card([Card(10, Suit.D), Card(11, Suit.D), Card(12, Suit.D), Card(13, Suit.D), Card(2, Suit.D)]))
+
+turn1 = [Card(1, Suit.D), Card(3, Suit.D), Card(4, Suit.S), Card(5, Suit.H), Card(2, Suit.D)]
+turn2 = [Card(1, Suit.D), Card(1, Suit.H), Card(1, Suit.S), Card(5, Suit.H), Card(5, Suit.D)]
+turn3 = [Card(1, Suit.D), Card(5, Suit.H), Card(5, Suit.S), Card(5, Suit.D), Card(5, Suit.C)]
+turn4 = [Card(2, Suit.D)]
+
+
+print(isValidTurn(turn1, turn2))
+print(isValidTurn(turn3, turn2))
+print(isValidTurn(turn4, turn3))
 
